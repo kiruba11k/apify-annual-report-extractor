@@ -27,6 +27,8 @@ const USER_AGENT = 'AnnualReportExtractor/2.0 (contact@yourapp.com)';
 // ── Resolve company name → CIK ─────────────────────────────────────────────
 export async function resolveCompanyToCIK(companyName) {
   log.info(`Resolving company: ${companyName}`);
+  const normalizedQuery = normalizeCompanyName(companyName);
+  const queryLooksLikeTicker = /^[A-Z]{1,6}$/.test(companyName.trim().toUpperCase());
 
   // Method 1: EDGAR company search (free)
   try {
@@ -34,12 +36,40 @@ export async function resolveCompanyToCIK(companyName) {
     const resp = await axiosGet(searchUrl);
     const hits = resp.data?.hits?.hits || [];
     if (hits.length > 0) {
-      const top = hits[0]._source;
-      return {
-        cik: String(top.entity_id || top.cik || '').padStart(10, '0'),
-        company_name: top.display_names?.[0] || companyName,
-        ticker: top.file_num || null
-      };
+      const candidates = hits
+        .map((hit) => hit?._source)
+        .filter(Boolean)
+        .map((source) => {
+          const names = (source.display_names || []).filter(Boolean);
+          const bestName = names[0] || source.entity_name || companyName;
+          const bestNameNormalized = normalizeCompanyName(bestName);
+          const ticker = source.tickers?.[0] || null;
+          const tickerNormalized = (ticker || '').toUpperCase();
+
+          let score = 0;
+          if (bestNameNormalized === normalizedQuery) score += 100;
+          if (bestNameNormalized.includes(normalizedQuery)) score += 40;
+          if (normalizedQuery.includes(bestNameNormalized)) score += 20;
+          if (tickerNormalized && queryLooksLikeTicker && tickerNormalized === companyName.trim().toUpperCase()) score += 90;
+
+          return {
+            score,
+            cik: String(source.entity_id || source.cik || '').padStart(10, '0'),
+            company_name: bestName,
+            ticker
+          };
+        })
+        .filter((candidate) => /^\d{10}$/.test(candidate.cik))
+        .sort((a, b) => b.score - a.score);
+
+      const top = candidates[0];
+      if (top && top.score > 0) {
+        return {
+          cik: top.cik,
+          company_name: top.company_name,
+          ticker: top.ticker
+        };
+      }
     }
   } catch (err) {
     log.warn(`EDGAR full-text search failed for ${companyName}: ${err.message}`);
@@ -67,11 +97,17 @@ export async function resolveCompanyToCIK(companyName) {
   try {
     const tickerResp = await axiosGet('https://www.sec.gov/files/company_tickers.json');
     const tickers = tickerResp.data;
-    const normalizedSearch = companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normalizedSearch = normalizedQuery;
+    const upperSearch = companyName.trim().toUpperCase();
     for (const [, data] of Object.entries(tickers)) {
-      const normalizedName = data.title.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const normalizedTicker = data.ticker.toLowerCase();
-      if (normalizedName.includes(normalizedSearch) || normalizedSearch.includes(normalizedTicker)) {
+      const normalizedName = normalizeCompanyName(data.title);
+      const normalizedTicker = (data.ticker || '').toUpperCase();
+      if (
+        normalizedName === normalizedSearch ||
+        normalizedName.includes(normalizedSearch) ||
+        normalizedSearch.includes(normalizedName) ||
+        (queryLooksLikeTicker && normalizedTicker === upperSearch)
+      ) {
         return {
           cik: String(data.cik_str).padStart(10, '0'),
           company_name: data.title,
@@ -292,4 +328,13 @@ function extractCompanyFromURL(url) {
   } catch {
     return 'Unknown Company';
   }
+}
+
+function normalizeCompanyName(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/\b(inc|corp|corporation|co|company|plc|ltd|limited|holdings?|group)\b/g, ' ')
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
 }
