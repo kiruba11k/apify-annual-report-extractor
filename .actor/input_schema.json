@@ -1,133 +1,45 @@
 {
-  "title": "Annual Report / Filings Extractor Input",
-  "type": "object",
-  "schemaVersion": 1,
-  "properties": {
-    "input_mode": {
-      "title": "Input Mode",
-      "type": "string",
-      "description": "How to provide the annual report(s). Use 'pdf_urls' for direct PDF links, 'company_names' for auto-discovery via SEC EDGAR/web, or 'mixed' for both.",
-      "enum": ["pdf_urls", "company_names", "mixed"],
-      "default": "company_names",
-      "editor": "select"
-    },
-    "pdf_urls": {
-      "title": "PDF Report URLs",
-      "type": "array",
-      "description": "Direct URLs to annual report or filing PDFs. Supports SEC EDGAR links, investor relation pages, or any public PDF URL.",
-      "editor": "stringList",
-      "items": { "type": "string", "format": "uri" },
-      "example": [
-        "https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm",
-        "https://example.com/annual-report-2024.pdf"
-      ]
-    },
-    "company_name_list": {
-      "title": "Company Name List",
-      "type": "array",
-      "description": "List of company names or ticker symbols. The actor will auto-discover and fetch the most recent annual filing from SEC EDGAR.",
-      "editor": "stringList",
-      "items": { "type": "string" },
-      "example": ["Apple", "Microsoft", "NVDA", "Tesla Inc"]
-    },
-    "report_year": {
-      "title": "Report Year Filter",
-      "type": "integer",
-      "description": "Target fiscal year for reports. Leave empty for the most recent available. Example: 2023",
-      "minimum": 2000,
-      "maximum": 2030
-    },
-    "filing_types": {
-      "title": "Filing Types",
-      "type": "array",
-      "description": "SEC filing types to consider. 10-K is standard annual, 20-F is for foreign private issuers.",
-      "editor": "checkboxes",
-      "items": {
-        "type": "string",
-        "enum": ["10-K", "20-F", "10-K/A", "20-F/A", "Annual Report"]
-      },
-      "default": ["10-K", "20-F"]
-    },
-    "extraction_focus": {
-      "title": "Extraction Focus Areas",
-      "type": "array",
-      "description": "Which intelligence categories to extract. Select all for comprehensive analysis.",
-      "editor": "checkboxes",
-      "items": {
-        "type": "string",
-        "enum": [
-          "capex_focus",
-          "digital_initiatives",
-          "investment_areas",
-          "strategic_priorities",
-          "risk_mentions",
-          "intent_signals",
-          "technology_spend",
-          "m_and_a_signals",
-          "workforce_signals",
-          "sustainability_capex"
-        ]
-      },
-      "default": [
-        "capex_focus",
-        "digital_initiatives",
-        "investment_areas",
-        "strategic_priorities",
-        "risk_mentions",
-        "intent_signals"
-      ]
-    },
-    "min_evidence_confidence": {
-      "title": "Minimum Evidence Confidence Score",
-      "type": "number",
-      "description": "Filter out extractions below this confidence threshold (0.0–1.0). Higher values = fewer but more precise results.",
-      "minimum": 0.0,
-      "maximum": 1.0,
-      "default": 0.65,
-      "editor": "number"
-    },
-    "max_pages_per_doc": {
-      "title": "Max Pages to Process Per Document",
-      "type": "integer",
-      "description": "Limit pages processed per PDF to control cost. Set to 0 for unlimited.",
-      "default": 200,
-      "minimum": 0,
-      "maximum": 500
-    },
-    "anthropic_api_key": {
-      "title": "Anthropic API Key (Optional)",
-      "type": "string",
-      "description": "Your Anthropic API key for Claude-powered extraction. If not provided, falls back to free extraction methods.",
-      "editor": "textfield",
-      "isSecret": true
-    },
-    "openai_api_key": {
-      "title": "OpenAI API Key (Optional)",
-      "type": "string",
-      "description": "Your OpenAI API key as an alternative AI extraction backend.",
-      "editor": "textfield",
-      "isSecret": true
-    },
-    "proxy_configuration": {
-      "title": "Proxy Configuration",
-      "type": "object",
-      "description": "Apify proxy settings for fetching reports.",
-      "editor": "proxy"
-    },
-    "output_format": {
-      "title": "Output Format",
-      "type": "string",
-      "description": "Structure of the output dataset.",
-      "enum": ["full", "compact", "signals_only"],
-      "default": "full",
-      "editor": "select"
-    },
-    "notify_webhook_url": {
-      "title": "Webhook Notification URL (Optional)",
-      "type": "string",
-      "description": "POST results to this URL when extraction completes.",
-      "editor": "textfield"
+  "actorSpecification": 1,
+  "name": "annual-report-filings-extractor",
+  "title": "Annual Report / Filings Strategic Extractor",
+  "description": "Extract capex focus, digital initiatives, investment signals, strategic priorities, and risk mentions from annual reports and SEC filings with page-level evidence. Supports PDF upload, URL input, or company name lookup.",
+  "version": "2.0.0",
+  "storages": {
+    "dataset": {
+      "actorSpecification": 1,
+      "title": "Extracted Filing Intelligence",
+      "views": {
+        "overview": {
+          "title": "Strategic Intelligence Overview",
+          "transformation": {
+            "fields": [
+              "company_name",
+              "ticker",
+              "report_year",
+              "filing_type",
+              "intent_signal",
+              "capex_focus",
+              "digital_spend_indicator",
+              "strategic_priorities",
+              "investment_areas",
+              "risk_mentions",
+              "evidence",
+              "metadata"
+            ]
+          },
+          "display": {
+            "component": "table",
+            "properties": {
+              "company_name": { "label": "Company", "format": "text" },
+              "report_year": { "label": "Year", "format": "number" },
+              "filing_type": { "label": "Filing Type", "format": "text" },
+              "intent_signal": { "label": "Intent Signal", "format": "text" },
+              "capex_focus": { "label": "CapEx Focus", "format": "array" },
+              "digital_spend_indicator": { "label": "Digital Spend", "format": "text" }
+            }
+          }
+        }
+      }
     }
-  },
-  "required": ["input_mode"]
+  }
 }
