@@ -175,6 +175,13 @@ async function parsePDF(buffer, maxPages) {
 
 // ── HTML Parsing (SEC EDGAR .htm format) ────────────────────────────────────
 async function parseHTML(html, maxPages) {
+  // Cheerio's transitive undici dependency expects a global File constructor.
+  // Node.js 18 does not always expose globalThis.File, so polyfill from node:buffer.
+  if (typeof globalThis.File === 'undefined') {
+    const { File } = await import('node:buffer');
+    globalThis.File = File;
+  }
+
   const { load } = await import('cheerio');
   const $ = load(html);
   
