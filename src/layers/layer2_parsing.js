@@ -75,21 +75,20 @@ export async function parseDocument(documentKey, options = {}) {
   
   log.info(`Parsing document: ${documentKey}`);
   const kvStore = await KeyValueStore.open();
-  const record = await kvStore.getRecord(documentKey);
+  const value = await kvStore.getValue(documentKey);
   
-  if (!record) {
+  if (!value) {
     throw new Error(`Document not found in KeyValueStore: ${documentKey}`);
   }
 
-  const contentType = record.contentType || 'application/octet-stream';
-  const isPDF = contentType.includes('pdf');
+  const isPDF = detectPDF(value);
   
   let parsed;
   if (isPDF) {
-    parsed = await parsePDF(record.value, max_pages);
+    parsed = await parsePDF(value, max_pages);
   } else {
     // HTML/HTM (SEC EDGAR format)
-    parsed = await parseHTML(record.value.toString('utf-8'), max_pages);
+    parsed = await parseHTML(value.toString('utf-8'), max_pages);
   }
 
   // Post-process: segment into sections
@@ -98,6 +97,13 @@ export async function parseDocument(documentKey, options = {}) {
   
   log.info(`Parsed ${parsed.total_pages} pages, ${parsed.sections.length} sections identified`);
   return parsed;
+}
+
+function detectPDF(value) {
+  if (!value) return false;
+  if (Buffer.isBuffer(value)) return value.subarray(0, 4).toString('ascii') === '%PDF';
+  if (typeof value === 'string') return value.startsWith('%PDF');
+  return false;
 }
 
 // ── PDF Parsing ─────────────────────────────────────────────────────────────
