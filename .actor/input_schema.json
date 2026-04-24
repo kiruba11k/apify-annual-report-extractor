@@ -44,11 +44,10 @@
         "filing_types": {
             "title": "Filing Types",
             "type": "array",
-            "description": "SEC filing types to consider.",
+            "description": "SEC filing types to consider (e.g., 10-K, 20-F, 10-K/A).",
             "editor": "stringList",
             "items": {
-                "type": "string",
-                "enum": ["10-K", "20-F", "10-K/A", "20-F/A", "Annual Report"]
+                "type": "string"
             },
             "default": ["10-K", "20-F"]
         },
@@ -58,19 +57,7 @@
             "description": "Which intelligence categories to extract.",
             "editor": "stringList",
             "items": {
-                "type": "string",
-                "enum": [
-                    "capex_focus",
-                    "digital_initiatives",
-                    "investment_areas",
-                    "strategic_priorities",
-                    "risk_mentions",
-                    "intent_signals",
-                    "technology_spend",
-                    "m_and_a_signals",
-                    "workforce_signals",
-                    "sustainability_capex"
-                ]
+                "type": "string"
             },
             "default": [
                 "capex_focus",
