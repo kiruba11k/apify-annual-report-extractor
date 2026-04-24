@@ -24,6 +24,32 @@ const EDGAR_FILING_INDEX = 'https://www.sec.gov/Archives/edgar/data/{cik}/{acces
 
 const USER_AGENT = 'AnnualReportExtractor/2.0 (contact@yourapp.com)';
 
+function normalizeCIK(value) {
+  if (value === null || value === undefined) return null;
+  const digitsOnly = String(value).replace(/\D/g, '');
+  if (!digitsOnly) return null;
+
+  const normalized = String(parseInt(digitsOnly, 10));
+  if (!/^\d+$/.test(normalized) || normalized === '0') return null;
+
+  return normalized.padStart(10, '0');
+}
+
+function resolveSourceCIK(source) {
+  const candidates = [
+    source?.cik,
+    ...(Array.isArray(source?.ciks) ? source.ciks : []),
+    source?.entity_id
+  ];
+
+  for (const candidate of candidates) {
+    const cik = normalizeCIK(candidate);
+    if (cik) return cik;
+  }
+
+  return null;
+}
+
 // ── Resolve company name → CIK ─────────────────────────────────────────────
 export async function resolveCompanyToCIK(companyName) {
   log.info(`Resolving company: ${companyName}`);
@@ -52,14 +78,15 @@ export async function resolveCompanyToCIK(companyName) {
           if (normalizedQuery.includes(bestNameNormalized)) score += 20;
           if (tickerNormalized && queryLooksLikeTicker && tickerNormalized === companyName.trim().toUpperCase()) score += 90;
 
+          const resolvedCik = resolveSourceCIK(source);
           return {
             score,
-            cik: String(source.entity_id || source.cik || '').padStart(10, '0'),
+            cik: resolvedCik,
             company_name: bestName,
             ticker
           };
         })
-        .filter((candidate) => /^\d{10}$/.test(candidate.cik))
+        .filter((candidate) => candidate.cik)
         .sort((a, b) => b.score - a.score);
 
       const top = candidates[0];
@@ -126,7 +153,12 @@ export async function resolveCompanyToCIK(companyName) {
 export async function getLatestFilingForCIK(cik, filingTypes = ['10-K', '20-F'], targetYear = null) {
   log.info(`Fetching filing index for CIK: ${cik}`);
   
-  const paddedCIK = String(cik).padStart(10, '0');
+  const paddedCIK = normalizeCIK(cik);
+  if (!paddedCIK) {
+    throw new Error(`Invalid CIK provided: ${cik}`);
+  }
+
+  const cikInt = parseInt(paddedCIK, 10);
   const subUrl = `https://data.sec.gov/submissions/CIK${paddedCIK}.json`;
   
   const resp = await axiosGet(subUrl, { headers: { 'User-Agent': USER_AGENT } });
@@ -149,7 +181,7 @@ export async function getLatestFilingForCIK(cik, filingTypes = ['10-K', '20-F'],
 
     const accession = accessions[i].replace(/-/g, '');
     const primaryDoc = docs[i];
-    const baseUrl = `https://www.sec.gov/Archives/edgar/data/${parseInt(cik)}/${accession}`;
+    const baseUrl = `https://www.sec.gov/Archives/edgar/data/${cikInt}/${accession}`;
 
     return {
       cik: paddedCIK,
