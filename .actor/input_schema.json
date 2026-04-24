@@ -16,8 +16,8 @@
       "type": "array",
       "description": "Direct URLs to annual report or filing PDFs. Supports SEC EDGAR links, investor relation pages, or any public PDF URL.",
       "editor": "stringList",
-      "items": { 
-        "type": "string" 
+      "items": {
+        "type": "string"
       },
       "example": [
         "https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm",
@@ -29,7 +29,9 @@
       "type": "array",
       "description": "List of company names or ticker symbols. The actor will auto-discover and fetch the most recent annual filing from SEC EDGAR.",
       "editor": "stringList",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "example": ["Apple", "Microsoft", "NVDA", "Tesla Inc"]
     },
     "report_year": {
@@ -44,7 +46,7 @@
       "title": "Filing Types",
       "type": "array",
       "description": "SEC filing types to consider. 10-K is standard annual, 20-F is for foreign private issuers.",
-      "editor": "checkboxes",
+      "editor": "stringList",
       "items": {
         "type": "string",
         "enum": ["10-K", "20-F", "10-K/A", "20-F/A", "Annual Report"]
@@ -55,7 +57,7 @@
       "title": "Extraction Focus Areas",
       "type": "array",
       "description": "Which intelligence categories to extract. Select all for comprehensive analysis.",
-      "editor": "checkboxes",
+      "editor": "stringList",
       "items": {
         "type": "string",
         "enum": [
