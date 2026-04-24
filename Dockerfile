@@ -1,5 +1,5 @@
-# Use Apify's Node.js base image with Puppeteer (for fallback web scraping)
-FROM apify/actor-node:18
+# Use Debian-based Apify Node.js image (supports apt-get)
+FROM apify/actor-node:18-debian
 
 # Install system dependencies for PDF processing
 RUN apt-get update && apt-get install -y \
