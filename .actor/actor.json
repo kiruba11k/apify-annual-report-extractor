@@ -1,42 +1,38 @@
 {
-  "actorSpecification": 1,
-  "name": "annual-report-filings-extractor",
-  "title": "Annual Report / Filings Strategic Extractor",
-  "description": "Extract capex focus, digital initiatives, investment signals, strategic priorities, and risk mentions from annual reports and SEC filings.",
-  "version": "2.0.0",
-  "dockerfile": "./Dockerfile",
-  "storages": {
-    "dataset": {
-      "actorSpecification": 1,
-      "title": "Extracted Filing Intelligence",
-      "views": {
-        "overview": {
-          "title": "Strategic Intelligence Overview",
-          "transformation": {
-            "fields": [
-              "company_name",
-              "ticker",
-              "report_year",
-              "filing_type",
-              "intent_signal",
-              "capex_focus",
-              "digital_spend_indicator",
-              "strategic_priorities",
-              "investment_areas",
-              "risk_mentions"
-            ]
-          },
-          "display": {
-            "component": "table",
-            "properties": {
-              "company_name": { "label": "Company", "format": "text" },
-              "report_year": { "label": "Year", "format": "number" },
-              "filing_type": { "label": "Filing Type", "format": "text" },
-              "intent_signal": { "label": "Intent Signal", "format": "text" }
+    "actorSpecification": 1,
+    "name": "annual-report-filings-extractor",
+    "title": "Annual Report / Filings Strategic Extractor",
+    "description": "Extract strategic intelligence from annual reports and SEC filings.",
+    "version": "2.0.0",
+    "dockerfile": "./Dockerfile",
+    "storages": {
+        "dataset": {
+            "actorSpecification": 1,
+            "title": "Extracted Filing Intelligence",
+            "views": {
+                "overview": {
+                    "title": "Intelligence Overview",
+                    "transformation": {
+                        "fields": [
+                            "company_name",
+                            "ticker",
+                            "report_year",
+                            "filing_type",
+                            "intent_signal",
+                            "capex_focus",
+                            "digital_spend_indicator"
+                        ]
+                    },
+                    "display": {
+                        "component": "table",
+                        "properties": {
+                            "company_name": { "label": "Company", "format": "text" },
+                            "report_year": { "label": "Year", "format": "number" },
+                            "filing_type": { "label": "Filing Type", "format": "text" }
+                        }
+                    }
+                }
             }
-          }
         }
-      }
     }
-  }
 }
