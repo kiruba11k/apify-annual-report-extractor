@@ -1,9 +1,17 @@
-# Use Debian-based Apify Node.js image (supports apt-get)
+# Use the correct Apify image name
 FROM apify/actor-node-puppeteer-chrome:18
+
+# Switch to root to install system packages
+USER root
+
+# Install system dependencies for PDF processing
 RUN apt-get update && apt-get install -y \
     poppler-utils \
     ghostscript \
     && rm -rf /var/lib/apt/lists/*
+
+# Switch back to the non-privileged apify user
+USER apify
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -12,6 +20,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install production dependencies
+# Note: npm install is run by user 'apify' now
 RUN npm install --production --quiet
 
 # Copy source code
