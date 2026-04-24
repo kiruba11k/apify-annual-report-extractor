@@ -96,7 +96,7 @@ export const FilingOutputSchema = z.object({
   // Quality Metadata
   metadata: z.object({
     extraction_timestamp: z.string(),
-    extraction_method: z.enum(['ai_claude', 'ai_openai', 'ai_free_tier', 'heuristic_fallback']),
+    extraction_method: z.enum(['ai_groq', 'heuristic_fallback']),
     pages_processed: z.number().int(),
     total_evidence_items: z.number().int(),
     avg_confidence: z.number().min(0).max(1),
@@ -117,8 +117,7 @@ export const InputSchema = z.object({
   ]),
   min_evidence_confidence: z.number().min(0).max(1).default(0.65),
   max_pages_per_doc: z.number().int().default(200),
-  anthropic_api_key: z.string().optional(),
-  openai_api_key: z.string().optional(),
+  groq_api_key: z.string().optional(),
   output_format: z.enum(['full', 'compact', 'signals_only']).default('full'),
   notify_webhook_url: z.string().url().optional()
 });

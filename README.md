@@ -29,10 +29,8 @@ INPUT
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ LAYER 3: AI EXTRACTION (Provider Cascade)                   │
-│  Primary  → Claude Haiku (cheapest, fast)                  │
-│  Fallback1 → OpenAI GPT-4o-mini                            │
-│  Fallback2 → Google Gemini Flash (FREE tier)               │
+│ LAYER 3: AI EXTRACTION (Single Provider)                    │
+│  Primary  → Groq (Llama 3.3 70B Versatile)                 │
 │  Each task runs in parallel: capex | digital | strategy    │
 │  + risk → synthesis pass                                   │
 └─────────────────────┬───────────────────────────────────────┘
@@ -91,7 +89,7 @@ INPUT
   "input_mode": "mixed",
   "company_name_list": ["Tesla", "Ford"],
   "pdf_urls": ["https://example.com/manual-report.pdf"],
-  "anthropic_api_key": "sk-ant-...",
+  "groq_api_key": "gsk_...",
   "report_year": 2024,
   "extraction_focus": ["capex_focus", "digital_initiatives", "investment_areas", "strategic_priorities", "risk_mentions", "intent_signals"],
   "min_evidence_confidence": 0.70,
@@ -167,7 +165,7 @@ INPUT
 
   "metadata": {
     "extraction_timestamp": "2025-01-15T10:23:41Z",
-    "extraction_method": "ai_claude",
+    "extraction_method": "ai_groq",
     "pages_processed": 187,
     "total_evidence_items": 28,
     "avg_confidence": 0.82,
@@ -210,12 +208,10 @@ INPUT
 
 | Provider | Key Required | Cost | Quality |
 |----------|-------------|------|---------|
-| Anthropic Claude | `anthropic_api_key` | ~$0.01–0.05/doc | ⭐⭐⭐⭐⭐ |
-| OpenAI GPT-4o-mini | `openai_api_key` | ~$0.02–0.08/doc | ⭐⭐⭐⭐ |
-| Google Gemini Flash | `GEMINI_API_KEY` env | **Free tier** (15 RPM) | ⭐⭐⭐ |
+| Groq (Llama 3.3 70B) | `groq_api_key` | Depends on Groq plan | ⭐⭐⭐⭐⭐ |
 | Heuristic (built-in) | None | **Free** | ⭐⭐ |
 
-The actor automatically cascades: Claude → OpenAI → Gemini → Heuristic.
+The actor runs Groq when `groq_api_key` is provided, otherwise uses heuristic extraction.
 
 ---
 
@@ -241,7 +237,6 @@ apify call annual-report-filings-extractor --input='{"input_mode":"company_names
 
 | Variable | Purpose |
 |----------|---------|
-| `GEMINI_API_KEY` | Google Gemini free tier key |
 | `LOG_LEVEL` | `DEBUG`, `INFO`, `WARN`, `ERROR` |
 
 ---
