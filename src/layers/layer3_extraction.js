@@ -2,10 +2,8 @@
 // ══════════════════════════════════════════════════════════════════════════════
 // LAYER 3 — AI-POWERED EXTRACTION ENGINE
 // Architecture:
-//   Primary  → Anthropic Claude (claude-3-haiku-20240307 for cost, sonnet for quality)
-//   Fallback1 → OpenAI GPT-4o-mini
-//   Fallback2 → Google Gemini Flash (free tier)
-//   Fallback3 → Heuristic regex/NLP extraction (always free)
+//   Primary  → Groq (Llama 3.3 70B Versatile)
+//   Fallback → Heuristic regex/NLP extraction (always free)
 //
 // Each extraction is run in parallel chunks with rate limiting
 // ══════════════════════════════════════════════════════════════════════════════
@@ -26,15 +24,13 @@ import {
 const log = createLogger('Layer3:Extraction');
 
 // Rate limiters
-const claudeLimit = pLimit(3);
-const openaiLimit = pLimit(5);
-const geminiLimit = pLimit(10);
+const groqLimit = pLimit(8);
 
 // ── Provider Router ─────────────────────────────────────────────────────────
 export async function extractWithAI(prompt, options = {}) {
-  const { anthropic_api_key, openai_api_key, provider_order } = options;
+  const { groq_api_key, provider_order } = options;
   
-  const providers = provider_order || buildProviderOrder(anthropic_api_key, openai_api_key);
+  const providers = provider_order || buildProviderOrder(groq_api_key);
   
   for (const provider of providers) {
     try {
@@ -52,11 +48,9 @@ export async function extractWithAI(prompt, options = {}) {
   return { result: null, provider: 'none' };
 }
 
-function buildProviderOrder(anthropicKey, openaiKey) {
+function buildProviderOrder(groqKey) {
   const order = [];
-  if (anthropicKey) order.push('claude_paid');
-  if (openaiKey) order.push('openai_paid');
-  order.push('gemini_free');  // Free tier
+  if (groqKey) order.push('groq_paid');
   order.push('heuristic');    // Always available
   return order;
 }
@@ -64,12 +58,8 @@ function buildProviderOrder(anthropicKey, openaiKey) {
 // ── Provider Implementations ─────────────────────────────────────────────────
 async function callProvider(provider, prompt, options) {
   switch (provider) {
-    case 'claude_paid':
-      return claudeLimit(() => callClaude(prompt, options.anthropic_api_key));
-    case 'openai_paid':
-      return openaiLimit(() => callOpenAI(prompt, options.openai_api_key));
-    case 'gemini_free':
-      return geminiLimit(() => callGemini(prompt));
+    case 'groq_paid':
+      return groqLimit(() => callGroq(prompt, options.groq_api_key));
     case 'heuristic':
       return null; // Handled separately in layer4
     default:
@@ -77,41 +67,15 @@ async function callProvider(provider, prompt, options) {
   }
 }
 
-// ── Anthropic Claude ────────────────────────────────────────────────────────
-async function callClaude(prompt, apiKey) {
+// ── Groq ─────────────────────────────────────────────────────────────────────
+async function callGroq(prompt, apiKey) {
   const response = await pRetry(
     () => axios.post(
-      'https://api.anthropic.com/v1/messages',
+      'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'claude-haiku-4-5',  // Cost-efficient for bulk; swap to sonnet-4 for quality
+        model: 'llama-3.3-70b-versatile',
         max_tokens: 4096,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: prompt }]
-      },
-      {
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json'
-        },
-        timeout: 90000
-      }
-    ),
-    { retries: 2, minTimeout: 3000, factor: 2 }
-  );
-
-  const text = response.data?.content?.[0]?.text || '';
-  return parseJSONResponse(text);
-}
-
-// ── OpenAI ───────────────────────────────────────────────────────────────────
-async function callOpenAI(prompt, apiKey) {
-  const response = await pRetry(
-    () => axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: 'gpt-4o-mini',  // Cost-efficient
-        max_tokens: 4096,
+        temperature: 0.1,
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
@@ -126,40 +90,10 @@ async function callOpenAI(prompt, apiKey) {
         timeout: 60000
       }
     ),
-    { retries: 2, minTimeout: 2000 }
+    { retries: 2, minTimeout: 2000, factor: 2 }
   );
 
   const text = response.data?.choices?.[0]?.message?.content || '';
-  return parseJSONResponse(text);
-}
-
-// ── Google Gemini Flash (FREE tier) ─────────────────────────────────────────
-async function callGemini(prompt) {
-  // Gemini 1.5 Flash has a free tier (15 RPM, 1M TPD as of 2024)
-  const GEMINI_FREE_KEY = process.env.GEMINI_API_KEY || '';
-  if (!GEMINI_FREE_KEY) throw new Error('No Gemini API key');
-
-  const response = await pRetry(
-    () => axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_FREE_KEY}`,
-      {
-        contents: [{
-          parts: [{
-            text: `${SYSTEM_PROMPT}\n\n${prompt}\n\nRespond ONLY with valid JSON, no markdown.`
-          }]
-        }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          maxOutputTokens: 4096,
-          temperature: 0.1
-        }
-      },
-      { timeout: 60000 }
-    ),
-    { retries: 2, minTimeout: 4000 }
-  );
-
-  const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
   return parseJSONResponse(text);
 }
 
@@ -364,9 +298,7 @@ function computeAvgConfidence(evidence) {
 
 function mapProviderToMethod(provider) {
   const map = {
-    claude_paid: 'ai_claude',
-    openai_paid: 'ai_openai',
-    gemini_free: 'ai_free_tier',
+    groq_paid: 'ai_groq',
     heuristic: 'heuristic_fallback'
   };
   return map[provider] || 'heuristic_fallback';

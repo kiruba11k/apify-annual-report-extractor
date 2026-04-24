@@ -11,7 +11,7 @@
 // │    PDF/HTML text extraction + page mapping + section segmentation   │
 // │                                                                     │
 // │  Layer 3: AI Extraction                                             │
-// │    Claude (paid) → OpenAI (paid) → Gemini (free) fallback chain    │
+// │    Groq (paid/free by account tier) → heuristic fallback           │
 // │                                                                     │
 // │  Layer 4: Heuristic Extraction                                      │
 // │    Regex + NLP pattern matching (always-free baseline)              │
@@ -53,8 +53,7 @@ try {
     mode: input.input_mode,
     companies: input.company_name_list?.length || 0,
     urls: input.pdf_urls?.length || 0,
-    has_anthropic_key: !!input.anthropic_api_key,
-    has_openai_key: !!input.openai_api_key
+    has_groq_key: !!input.groq_api_key
   });
 
   // ── Build document job list ──────────────────────────────────────────────
@@ -120,7 +119,7 @@ try {
 
         // ── LAYER 3 + 4: Extract intelligence ─────────────────────────────
         let extractionResult;
-        const hasAIProvider = input.anthropic_api_key || input.openai_api_key || process.env.GEMINI_API_KEY;
+        const hasAIProvider = input.groq_api_key;
 
         if (hasAIProvider) {
           // AI extraction (primary path)
@@ -131,13 +130,12 @@ try {
             {
               extraction_focus: input.extraction_focus,
               min_evidence_confidence: input.min_evidence_confidence,
-              anthropic_api_key: input.anthropic_api_key,
-              openai_api_key: input.openai_api_key
+              groq_api_key: input.groq_api_key
             }
           );
         } else {
           // Heuristic fallback (always free)
-          log.info('No AI API keys provided — using heuristic extraction');
+          log.info('No Groq API key provided — using heuristic extraction');
           const heuristicResult = await heuristicExtract(
             parsedDoc,
             focusedContent,
@@ -161,7 +159,7 @@ try {
               total_evidence_items: heuristicResult.evidence?.length || 0,
               avg_confidence: computeAvg(heuristicResult.evidence?.map(e => e.confidence) || []),
               processing_time_ms: 0,
-              warnings: ['No AI API keys provided. Results are heuristic-based.']
+              warnings: ['No Groq API key provided. Results are heuristic-based.']
             }
           };
         }
