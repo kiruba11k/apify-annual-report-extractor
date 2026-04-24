@@ -259,11 +259,38 @@ export async function downloadDocument(url, key, proxyConfig = null) {
 
 // ── Pipeline: company name → downloaded document ──────────────────────────
 export async function acquireFromCompanyName(companyName, options = {}) {
-  const { report_year, filing_types, proxy_configuration } = options;
+  const { report_year, filing_types, proxy_configuration, allow_non_sec_fallback = true } = options;
   
-  // Step 1: Resolve company to CIK
-  const resolved = await resolveCompanyToCIK(companyName);
-  log.info(`Resolved "${companyName}" → CIK: ${resolved.cik}, Name: ${resolved.company_name}`);
+  let resolved;
+  try {
+    // Step 1: Resolve company to CIK
+    resolved = await resolveCompanyToCIK(companyName);
+    log.info(`Resolved "${companyName}" → CIK: ${resolved.cik}, Name: ${resolved.company_name}`);
+  } catch (err) {
+    if (!allow_non_sec_fallback) throw err;
+
+    log.warn(`SEC resolution failed for "${companyName}". Trying public annual-report URL fallback.`);
+    const fallbackUrl = await discoverAnnualReportUrlForCompany(companyName);
+    if (!fallbackUrl) {
+      throw new Error(`${err.message}. No public annual-report URL found for "${companyName}". Try input_mode:"pdf_urls" with a direct annual report link.`);
+    }
+
+    const fallbackDoc = await acquireFromURL(fallbackUrl, {
+      proxy_configuration,
+      company_name_override: companyName,
+      report_year_override: report_year || undefined
+    });
+
+    return {
+      ...fallbackDoc,
+      filing_type: fallbackDoc.filing_type || 'Annual Report (web fallback)',
+      source_url: fallbackDoc.source_url || fallbackUrl,
+      metadata: {
+        acquisition_method: 'web_fallback',
+        sec_resolution_error: err.message
+      }
+    };
+  }
 
   // Step 2: Find the latest annual filing
   const filingMeta = await getLatestFilingForCIK(resolved.cik, filing_types, report_year);
@@ -290,6 +317,7 @@ export async function acquireFromCompanyName(companyName, options = {}) {
 
 // ── Pipeline: direct PDF URL → downloaded document ──────────────────────
 export async function acquireFromURL(url, options = {}) {
+  const { company_name_override = null, report_year_override = null } = options;
   const docKey = `url_doc_${Buffer.from(url).toString('base64').slice(0, 20)}_${Date.now()}`;
   const downloadResult = await downloadDocument(url, docKey, options.proxy_configuration);
 
@@ -297,8 +325,8 @@ export async function acquireFromURL(url, options = {}) {
   const yearMatch = url.match(/20\d{2}/);
   
   return {
-    company_name: extractCompanyFromURL(url),
-    report_year: yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear(),
+    company_name: company_name_override || extractCompanyFromURL(url),
+    report_year: report_year_override || (yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear()),
     filing_type: 'Annual Report',
     source_url: url,
     document_key: docKey,
@@ -337,4 +365,33 @@ function normalizeCompanyName(value) {
     .replace(/\b(inc|corp|corporation|co|company|plc|ltd|limited|holdings?|group)\b/g, ' ')
     .replace(/[^a-z0-9]/g, '')
     .trim();
+}
+
+async function discoverAnnualReportUrlForCompany(companyName) {
+  const query = `${companyName} annual report pdf`;
+  const url = `https://duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+
+  try {
+    const resp = await axiosGet(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        'Accept': 'text/html'
+      }
+    });
+
+    const html = String(resp.data || '');
+    const links = [...html.matchAll(/<a[^>]+href="([^"]+)"[^>]*>/gi)]
+      .map((m) => decodeURIComponent(m[1]))
+      .filter((href) => href.startsWith('http'))
+      .filter((href) => !href.includes('duckduckgo.com'))
+      .filter((href) => {
+        const lower = href.toLowerCase();
+        return lower.endsWith('.pdf') || lower.includes('annual') || lower.includes('investor');
+      });
+
+    return links[0] || null;
+  } catch (err) {
+    log.warn(`Web fallback discovery failed for "${companyName}": ${err.message}`);
+    return null;
+  }
 }
