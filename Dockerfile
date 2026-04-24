@@ -1,6 +1,5 @@
 # Use Debian-based Apify Node.js image (supports apt-get)
-FROM apify/actor-node-puppeteer:18
-# Install system dependencies for PDF processing
+FROM apify/actor-node-puppeteer-chrome:18
 RUN apt-get update && apt-get install -y \
     poppler-utils \
     ghostscript \
