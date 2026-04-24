@@ -2,8 +2,9 @@
   "actorSpecification": 1,
   "name": "annual-report-filings-extractor",
   "title": "Annual Report / Filings Strategic Extractor",
-  "description": "Extract capex focus, digital initiatives, investment signals, strategic priorities, and risk mentions from annual reports and SEC filings with page-level evidence. Supports PDF upload, URL input, or company name lookup.",
+  "description": "Extract capex focus, digital initiatives, investment signals, strategic priorities, and risk mentions from annual reports and SEC filings.",
   "version": "2.0.0",
+  "dockerfile": "./Dockerfile",
   "storages": {
     "dataset": {
       "actorSpecification": 1,
@@ -22,9 +23,7 @@
               "digital_spend_indicator",
               "strategic_priorities",
               "investment_areas",
-              "risk_mentions",
-              "evidence",
-              "metadata"
+              "risk_mentions"
             ]
           },
           "display": {
@@ -33,9 +32,7 @@
               "company_name": { "label": "Company", "format": "text" },
               "report_year": { "label": "Year", "format": "number" },
               "filing_type": { "label": "Filing Type", "format": "text" },
-              "intent_signal": { "label": "Intent Signal", "format": "text" },
-              "capex_focus": { "label": "CapEx Focus", "format": "array" },
-              "digital_spend_indicator": { "label": "Digital Spend", "format": "text" }
+              "intent_signal": { "label": "Intent Signal", "format": "text" }
             }
           }
         }
