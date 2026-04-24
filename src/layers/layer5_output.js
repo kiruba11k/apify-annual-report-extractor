@@ -122,7 +122,8 @@ function formatSignalsOnly(r) {
 export async function saveToDataset(formattedResult) {
   const dataset = await Dataset.open();
   await dataset.pushData(formattedResult);
-  log.info(`Saved to dataset: ${formattedResult.company_name} ${formattedResult.report_year}`);
+  const yearLabel = formattedResult.report_year ?? 'n/a';
+  log.info(`Saved to dataset: ${formattedResult.company_name} ${yearLabel}`);
 }
 
 // ── Webhook Delivery ─────────────────────────────────────────────────────────
