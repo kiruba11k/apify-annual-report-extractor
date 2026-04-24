@@ -1,6 +1,5 @@
 # Use Debian-based Apify Node.js image (supports apt-get)
-FROM apify/actor-node:18-debian
-
+FROM apify/actor-node-puppeteer:18
 # Install system dependencies for PDF processing
 RUN apt-get update && apt-get install -y \
     poppler-utils \
