@@ -48,9 +48,9 @@
       "description": "SEC filing types to consider. 10-K is standard annual, 20-F is for foreign private issuers.",
       "editor": "stringList",
       "items": {
-        "type": "string",
-        "enum": ["10-K", "20-F", "10-K/A", "20-F/A", "Annual Report"]
+        "type": "string"
       },
+      "enum": ["10-K", "20-F", "10-K/A", "20-F/A", "Annual Report"],
       "default": ["10-K", "20-F"]
     },
     "extraction_focus": {
@@ -59,20 +59,20 @@
       "description": "Which intelligence categories to extract. Select all for comprehensive analysis.",
       "editor": "stringList",
       "items": {
-        "type": "string",
-        "enum": [
-          "capex_focus",
-          "digital_initiatives",
-          "investment_areas",
-          "strategic_priorities",
-          "risk_mentions",
-          "intent_signals",
-          "technology_spend",
-          "m_and_a_signals",
-          "workforce_signals",
-          "sustainability_capex"
-        ]
+        "type": "string"
       },
+      "enum": [
+        "capex_focus",
+        "digital_initiatives",
+        "investment_areas",
+        "strategic_priorities",
+        "risk_mentions",
+        "intent_signals",
+        "technology_spend",
+        "m_and_a_signals",
+        "workforce_signals",
+        "sustainability_capex"
+      ],
       "default": [
         "capex_focus",
         "digital_initiatives",
