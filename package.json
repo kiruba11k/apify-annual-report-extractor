@@ -1,6 +1,6 @@
 {
   "name": "annual-report-filings-extractor",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Extract strategic priorities, capex focus, digital initiatives, and investment signals from annual reports and SEC filings with page-level evidence.",
   "main": "src/main.js",
   "type": "module",
