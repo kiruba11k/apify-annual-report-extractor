@@ -14,29 +14,23 @@
         "pdf_urls": {
             "title": "PDF Report URLs",
             "type": "array",
-            "description": "Direct URLs to annual report or filing PDFs.",
+            "description": "Direct URLs to annual report or filing PDFs or HTML filings.",
             "editor": "stringList",
-            "items": {
-                "type": "string"
-            },
-            "example": [
-                "https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm"
-            ]
+            "items": { "type": "string" },
+            "example": ["https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm"]
         },
         "company_name_list": {
             "title": "Company Name List",
             "type": "array",
-            "description": "List of company names or ticker symbols.",
+            "description": "List of company names or ticker symbols. Works for US (SEC EDGAR) and international companies (annualreports.com, IR pages, SEDAR+, ASX, Companies House).",
             "editor": "stringList",
-            "items": {
-                "type": "string"
-            },
-            "example": ["Apple", "Microsoft", "NVDA"]
+            "items": { "type": "string" },
+            "example": ["Apple", "Microsoft", "NVDA", "Unilever", "Toyota", "Nestle"]
         },
         "report_year": {
             "title": "Report Year Filter",
             "type": "integer",
-            "description": "Target fiscal year for reports. Leave empty for the most recent.",
+            "description": "Target fiscal year. Leave empty for most recent.",
             "minimum": 2000,
             "maximum": 2030,
             "editor": "number"
@@ -44,21 +38,25 @@
         "filing_types": {
             "title": "Filing Types",
             "type": "array",
-            "description": "SEC filing types to consider (e.g., 10-K, 20-F, 10-K/A).",
+            "description": "SEC filing types to consider.",
             "editor": "stringList",
-            "items": {
-                "type": "string"
-            },
+            "items": { "type": "string" },
             "default": ["10-K", "20-F"]
+        },
+        "preferred_sources": {
+            "title": "Preferred Acquisition Sources",
+            "type": "array",
+            "description": "Which data sources to try when acquiring annual reports. Tried in order. 'sec' = SEC EDGAR (US), 'annualreports' = annualreports.com, 'ir_page' = company investor-relations website, 'international' = SEDAR+/ASX/Companies House, 'web_search' = DuckDuckGo/Bing search.",
+            "editor": "stringList",
+            "items": { "type": "string" },
+            "default": ["sec", "annualreports", "ir_page", "international", "web_search"]
         },
         "extraction_focus": {
             "title": "Extraction Focus Areas",
             "type": "array",
-            "description": "Which intelligence categories to extract.",
+            "description": "Which intelligence categories to extract. Leave empty to extract all.",
             "editor": "stringList",
-            "items": {
-                "type": "string"
-            },
+            "items": { "type": "string" },
             "default": [
                 "capex_focus",
                 "digital_initiatives",
@@ -71,7 +69,7 @@
         "min_evidence_confidence": {
             "title": "Minimum Evidence Confidence Score",
             "type": "number",
-            "description": "Filter threshold (0.0–1.0).",
+            "description": "Filter threshold (0.0–1.0). Lower = more results, less precise.",
             "minimum": 0,
             "maximum": 1,
             "default": 0.65,
@@ -80,37 +78,65 @@
         "max_pages_per_doc": {
             "title": "Max Pages to Process Per Document",
             "type": "integer",
-            "description": "Limit pages processed per PDF. Set to 0 for unlimited.",
+            "description": "Limit pages processed per PDF. Set to 0 for unlimited (slower).",
             "default": 200,
             "minimum": 0,
             "maximum": 500,
             "editor": "number"
         },
-        "anthropic_api_key": {
-            "title": "Anthropic API Key (Optional)",
+        "gemini_api_key": {
+            "title": "Google Gemini API Key (Recommended — free tier)",
             "type": "string",
-            "description": "Your Anthropic API key.",
+            "description": "Get free at aistudio.google.com. Free tier: 15 req/min, 1M tokens/day. Gemini 1.5 Flash is used.",
             "editor": "textfield",
             "isSecret": true
         },
-        "openai_api_key": {
-            "title": "OpenAI API Key (Optional)",
+        "groq_api_key": {
+            "title": "Groq API Key (free tier available)",
             "type": "string",
-            "description": "Your OpenAI API key.",
+            "description": "Get free at console.groq.com. Free tier: 30 req/min. Uses Llama 3.3 70B Versatile.",
+            "editor": "textfield",
+            "isSecret": true
+        },
+        "together_api_key": {
+            "title": "Together AI API Key (free $1 credit)",
+            "type": "string",
+            "description": "Get at api.together.xyz — free $1 credit on signup. Uses Llama 3.3 70B Instruct Turbo.",
+            "editor": "textfield",
+            "isSecret": true
+        },
+        "openrouter_api_key": {
+            "title": "OpenRouter API Key (free models available)",
+            "type": "string",
+            "description": "Get at openrouter.ai — free models include Llama 3.3 70B, Mistral 7B.",
+            "editor": "textfield",
+            "isSecret": true
+        },
+        "mistral_api_key": {
+            "title": "Mistral AI API Key (free tier)",
+            "type": "string",
+            "description": "Get at console.mistral.ai — free tier available. Uses mistral-small-latest.",
+            "editor": "textfield",
+            "isSecret": true
+        },
+        "huggingface_api_token": {
+            "title": "HuggingFace API Token (free)",
+            "type": "string",
+            "description": "Get free at huggingface.co/settings/tokens. Uses Mistral 7B Instruct.",
             "editor": "textfield",
             "isSecret": true
         },
         "proxy_configuration": {
             "title": "Proxy Configuration",
             "type": "object",
-            "description": "Apify proxy settings.",
+            "description": "Apify proxy settings for downloading documents.",
             "editor": "proxy",
             "default": { "useApifyProxy": true }
         },
         "output_format": {
             "title": "Output Format",
             "type": "string",
-            "description": "Structure of the output dataset.",
+            "description": "'full' = all fields + evidence; 'compact' = top 5 of each; 'signals_only' = high-level signals only.",
             "enum": ["full", "compact", "signals_only"],
             "default": "full",
             "editor": "select"
@@ -118,7 +144,7 @@
         "notify_webhook_url": {
             "title": "Webhook Notification URL (Optional)",
             "type": "string",
-            "description": "POST results to this URL.",
+            "description": "POST results to this URL when processing completes.",
             "editor": "textfield"
         }
     },
