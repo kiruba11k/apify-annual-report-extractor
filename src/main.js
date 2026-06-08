@@ -49,11 +49,21 @@ try {
     process.exit(1);
   }
 
+  const activeProviders = [
+    input.gemini_api_key && 'gemini',
+    input.groq_api_key && 'groq',
+    input.together_api_key && 'together',
+    input.openrouter_api_key && 'openrouter',
+    input.mistral_api_key && 'mistral',
+    input.huggingface_api_token && 'huggingface'
+  ].filter(Boolean);
+
   log.info('Actor started', {
     mode: input.input_mode,
     companies: input.company_name_list?.length || 0,
     urls: input.pdf_urls?.length || 0,
-    has_groq_key: !!input.groq_api_key
+    ai_providers: activeProviders.length > 0 ? activeProviders.join(', ') : 'heuristic only',
+    preferred_sources: input.preferred_sources?.join(', ')
   });
 
   // ── Build document job list ──────────────────────────────────────────────
@@ -97,7 +107,8 @@ try {
           filingMeta = await acquireFromCompanyName(job.value, {
             report_year: input.report_year,
             filing_types: input.filing_types,
-            proxy_configuration: input.proxy_configuration
+            proxy_configuration: input.proxy_configuration,
+            preferred_sources: input.preferred_sources
           });
         } else {
           filingMeta = await acquireFromURL(job.value, {
@@ -119,10 +130,10 @@ try {
 
         // ── LAYER 3 + 4: Extract intelligence ─────────────────────────────
         let extractionResult;
-        const hasAIProvider = input.groq_api_key;
+        const hasAIProvider = activeProviders.length > 0;
 
         if (hasAIProvider) {
-          // AI extraction (primary path)
+          // AI extraction with provider cascade
           extractionResult = await runFullExtraction(
             parsedDoc,
             focusedContent,
@@ -130,12 +141,17 @@ try {
             {
               extraction_focus: input.extraction_focus,
               min_evidence_confidence: input.min_evidence_confidence,
-              groq_api_key: input.groq_api_key
+              gemini_api_key: input.gemini_api_key,
+              groq_api_key: input.groq_api_key,
+              together_api_key: input.together_api_key,
+              openrouter_api_key: input.openrouter_api_key,
+              mistral_api_key: input.mistral_api_key,
+              huggingface_api_token: input.huggingface_api_token
             }
           );
         } else {
-          // Heuristic fallback (always free)
-          log.info('No Groq API key provided — using heuristic extraction');
+          // Heuristic fallback (always free — add any AI key for better results)
+          log.info('No AI provider keys configured — using heuristic extraction');
           const heuristicResult = await heuristicExtract(
             parsedDoc,
             focusedContent,
