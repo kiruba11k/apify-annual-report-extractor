@@ -96,7 +96,8 @@ export const FilingOutputSchema = z.object({
   // Quality Metadata
   metadata: z.object({
     extraction_timestamp: z.string(),
-    extraction_method: z.enum(['ai_groq', 'heuristic_fallback']),
+    extraction_method: z.string(),
+    ai_provider: z.string().optional(),
     pages_processed: z.number().int(),
     total_evidence_items: z.number().int(),
     avg_confidence: z.number().min(0).max(1),
@@ -111,13 +112,20 @@ export const InputSchema = z.object({
   company_name_list: z.array(z.string()).optional().default([]),
   report_year: z.number().int().optional(),
   filing_types: z.array(z.string()).default(['10-K', '20-F']),
+  preferred_sources: z.array(z.string()).default(['sec', 'annualreports', 'ir_page', 'international', 'web_search']),
   extraction_focus: z.array(z.string()).default([
     'capex_focus', 'digital_initiatives', 'investment_areas',
     'strategic_priorities', 'risk_mentions', 'intent_signals'
   ]),
   min_evidence_confidence: z.number().min(0).max(1).default(0.65),
   max_pages_per_doc: z.number().int().default(200),
+  // AI provider keys — all optional, free tiers available
+  gemini_api_key: z.string().optional(),
   groq_api_key: z.string().optional(),
+  together_api_key: z.string().optional(),
+  openrouter_api_key: z.string().optional(),
+  mistral_api_key: z.string().optional(),
+  huggingface_api_token: z.string().optional(),
   output_format: z.enum(['full', 'compact', 'signals_only']).default('full'),
   notify_webhook_url: z.string().url().optional()
 });
