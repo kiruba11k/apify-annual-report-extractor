@@ -120,12 +120,13 @@ export const InputSchema = z.object({
   min_evidence_confidence: z.number().min(0).max(1).default(0.65),
   max_pages_per_doc: z.number().int().default(200),
   // AI provider keys — all optional, free tiers available
-  gemini_api_key: z.string().optional(),
-  groq_api_key: z.string().optional(),
-  together_api_key: z.string().optional(),
-  openrouter_api_key: z.string().optional(),
-  mistral_api_key: z.string().optional(),
-  huggingface_api_token: z.string().optional(),
+  // Not exposed in input UI; supplied via Actor build/run environment variables.
+  gemini_api_key: z.string().optional().default(process.env.GEMINI_API_KEY || ''),
+  groq_api_key: z.string().optional().default(process.env.GROQ_API_KEY || ''),
+  together_api_key: z.string().optional().default(process.env.TOGETHER_API_KEY || ''),
+  openrouter_api_key: z.string().optional().default(process.env.OPENROUTER_API_KEY || ''),
+  mistral_api_key: z.string().optional().default(process.env.MISTRAL_API_KEY || ''),
+  huggingface_api_token: z.string().optional().default(process.env.HUGGINGFACE_API_TOKEN || ''),
   output_format: z.enum(['full', 'compact', 'signals_only']).default('full'),
   notify_webhook_url: z.string().url().optional()
 });
