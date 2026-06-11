@@ -657,10 +657,13 @@ export async function downloadDocument(url, key, proxyConfig = null) {
     return { key, cached: true, size: cached.length };
   }
 
+  const isSEC = /(^|\.)sec\.gov$/i.test(new URL(url).hostname);
+
   const axiosConfig = {
     responseType: 'arraybuffer',
     headers: {
       'User-Agent': BROWSER_UA,
+      'User-Agent': isSEC ? USER_AGENT : BROWSER_UA,
       'Accept': 'application/pdf,text/html,*/*',
       'Accept-Language': 'en-US,en;q=0.9'
     },
