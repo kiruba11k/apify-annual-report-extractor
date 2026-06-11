@@ -84,48 +84,7 @@
             "maximum": 500,
             "editor": "number"
         },
-        "gemini_api_key": {
-            "title": "Google Gemini API Key (Recommended — free tier)",
-            "type": "string",
-            "description": "Get free at aistudio.google.com. Free tier: 15 req/min, 1M tokens/day. Gemini 1.5 Flash is used.",
-            "editor": "textfield",
-            "isSecret": true
-        },
-        "groq_api_key": {
-            "title": "Groq API Key (free tier available)",
-            "type": "string",
-            "description": "Get free at console.groq.com. Free tier: 30 req/min. Uses Llama 3.3 70B Versatile.",
-            "editor": "textfield",
-            "isSecret": true
-        },
-        "together_api_key": {
-            "title": "Together AI API Key (free $1 credit)",
-            "type": "string",
-            "description": "Get at api.together.xyz — free $1 credit on signup. Uses Llama 3.3 70B Instruct Turbo.",
-            "editor": "textfield",
-            "isSecret": true
-        },
-        "openrouter_api_key": {
-            "title": "OpenRouter API Key (free models available)",
-            "type": "string",
-            "description": "Get at openrouter.ai — free models include Llama 3.3 70B, Mistral 7B.",
-            "editor": "textfield",
-            "isSecret": true
-        },
-        "mistral_api_key": {
-            "title": "Mistral AI API Key (free tier)",
-            "type": "string",
-            "description": "Get at console.mistral.ai — free tier available. Uses mistral-small-latest.",
-            "editor": "textfield",
-            "isSecret": true
-        },
-        "huggingface_api_token": {
-            "title": "HuggingFace API Token (free)",
-            "type": "string",
-            "description": "Get free at huggingface.co/settings/tokens. Uses Mistral 7B Instruct.",
-            "editor": "textfield",
-            "isSecret": true
-        },
+        
         "proxy_configuration": {
             "title": "Proxy Configuration",
             "type": "object",
